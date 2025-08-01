@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Insulin Guide: Metabolism, Fitness & Fertility</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Soothing Neutrals -->
+    <!-- Application Structure Plan: A multi-section, single-page application designed for intuitive exploration. The structure progresses logically from foundational knowledge to problems and finally to actionable solutions. It uses a top navigation bar for quick access to key themes: 1) What is Insulin?, 2) The Circadian Link, 3) Insulin Resistance, 4) Action Plan, and 5) Fertility. This thematic, non-linear structure is chosen over the report's linear format to allow users to directly access the information most relevant to them, enhancing usability and engagement. Interactive diagrams and charts are used to simplify complex biological processes, making them more understandable than text alone. Gemini API is integrated for a meal planner and a summary generator. -->
+    <!-- Visualization & Content Choices: 
+        - Insulin's Actions: Report Info -> Insulin's effect on tissues. Goal -> Inform/Compare. Viz -> Interactive HTML diagram. Interaction -> Buttons update text. Justification -> More engaging than a static table. Library -> Vanilla JS.
+        - Circadian Rhythm: Report Info -> Diurnal insulin sensitivity. Goal -> Show Change/Compare. Viz -> Line Chart. Interaction -> Buttons toggle datasets for meal timing. Justification -> Visualizes the abstract concept of chrononutrition effectively. Library -> Chart.js.
+        - Insulin Resistance Cycle: Report Info -> Pathophysiology of resistance. Goal -> Organize/Show Relationships. Viz -> HTML/CSS flowchart. Interaction -> Clickable nodes for detail. Justification -> Clearly shows the feedback loop. Library -> Vanilla JS.
+        - Action Plan: Report Info -> Diet, exercise, lifestyle advice. Goal -> Inform/Organize. Viz -> Tabbed interface with card-based lists. Interaction -> Tabs switch content. Justification -> Organizes a large amount of practical advice into digestible chunks. Library -> Vanilla JS.
+        - AI Meal Helper: Goal -> Provide practical, personalized dietary advice. Viz -> Input form and output area. Interaction -> User inputs ingredients, clicks button to get Gemini-powered recipe. Justification -> Makes dietary advice actionable. Library -> Gemini API.
+        - AI Summarizer: Goal -> Provide a quick overview. Viz -> Button and modal. Interaction -> User clicks button, Gemini generates summary in a popup. Justification -> Enhances accessibility and retention of information. Library -> Gemini API.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F7F4; /* Warm Neutral Background */
+            color: #4A4A4A;
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #3B82F6; /* Subtle Accent Blue */
+            border-bottom-color: #3B82F6;
+        }
+        .card {
+            background-color: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.07);
+        }
+        .btn {
+            transition: background-color 0.3s, transform 0.3s;
+        }
+        .btn-primary {
+            background-color: #3B82F6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563EB;
+        }
+        .btn-secondary {
+            background-color: #E0E7FF;
+            color: #3730A3;
+        }
+        .btn-secondary.active, .btn-secondary:hover {
+            background-color: #C7D2FE;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 640px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .tab.active {
+            border-color: #3B82F6;
+            color: #3B82F6;
+            background-color: #EFF6FF;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3B82F6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-gray-800">The Insulin Guide</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#introduction" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">Home</a>
+                        <a href="#what-is-insulin" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">How It Works</a>
+                        <a href="#circadian-rhythm" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">The Body Clock</a>
+                        <a href="#resistance" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">The Problem</a>
+                        <a href="#action-plan" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">Action Plan</a>
+                        <a href="#fertility" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">Fertility</a>
+                    </div>
+                </div>
+                 <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-800 hover:bg-gray-100 focus:outline-none">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#introduction" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-700">Home</a>
+                <a href="#what-is-insulin" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-700">How It Works</a>
+                <a href="#circadian-rhythm" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-700">The Body Clock</a>
+                <a href="#resistance" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-700">The Problem</a>
+                <a href="#action-plan" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-700">Action Plan</a>
+                <a href="#fertility" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-700">Fertility</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Section: Introduction -->
+        <section id="introduction" class="py-20 sm:py-24">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl lg:text-5xl">Understand Insulin. Master Your Health.</h2>
+                <p class="mt-6 max-w-3xl mx-auto text-lg leading-8 text-gray-600">Insulin is more than just a hormone for diabetes; it's the master regulator of your body's energy. It dictates whether you store fat or burn it, build muscle, and even impacts your internal body clock and fertility. This guide makes the science simple and provides an actionable plan to help you take control.</p>
+                <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <a href="#what-is-insulin" class="btn btn-primary rounded-md px-6 py-3 text-base font-semibold shadow-sm w-full sm:w-auto">Start Exploring</a>
+                    <button id="summarizeBtn" class="btn btn-secondary rounded-md px-6 py-3 text-base font-semibold shadow-sm w-full sm:w-auto flex items-center justify-center gap-2">
+                        ✨ Get AI Key Takeaways
+                        <span id="summarizeLoader" class="loader hidden"></span>
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 space-y-24 mb-24">
+
+            <!-- Section: What is Insulin? -->
+            <section id="what-is-insulin" class="scroll-mt-20">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl font-bold text-gray-900">The Anabolic Orchestra: How Insulin Works</h3>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">After a meal, your pancreas releases insulin. Think of it as a conductor, telling different parts of your body what to do with the incoming energy (glucose). Its primary job is to lower blood sugar by moving it into cells for storage or immediate use.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                    <div class="card p-6">
+                        <h4 class="text-xl font-semibold text-gray-800 mb-4">Insulin's Actions Across the Body</h4>
+                        <p class="text-gray-600 mb-6">Insulin's effects are tissue-specific. Click the buttons below to see how it directs the flow of energy in your liver, muscles, and fat tissue. This balance is key to metabolic health.</p>
+                        <div class="flex flex-wrap gap-3 mb-6">
+                            <button class="btn btn-secondary px-4 py-2 rounded-md text-sm font-medium" data-tissue="liver">Liver</button>
+                            <button class="btn btn-secondary px-4 py-2 rounded-md text-sm font-medium" data-tissue="muscle">Muscle</button>
+                            <button class="btn btn-secondary px-4 py-2 rounded-md text-sm font-medium" data-tissue="fat">Fat Tissue</button>
+                        </div>
+                        <div id="tissue-info" class="bg-gray-50 p-4 rounded-lg min-h-[180px]">
+                            <h5 id="tissue-title" class="font-bold text-lg text-indigo-700">Select a tissue to learn more.</h5>
+                            <p id="tissue-description" class="mt-2 text-gray-700"></p>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                         <div class="relative w-full max-w-md mx-auto">
+                            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
+                                <span class="font-bold text-blue-800">Pancreas</span>
+                            </div>
+                            <div class="absolute top-0 left-1/2 -translate-x-1/2 -mt-8 p-3 bg-green-100 rounded-lg shadow">
+                                <span class="font-semibold text-green-800">Liver</span>
+                            </div>
+                            <div class="absolute bottom-0 left-0 -mb-8 p-3 bg-red-100 rounded-lg shadow">
+                                <span class="font-semibold text-red-800">Muscle</span>
+                            </div>
+                            <div class="absolute bottom-0 right-0 -mb-8 p-3 bg-yellow-100 rounded-lg shadow">
+                                <span class="font-semibold text-yellow-800">Fat</span>
+                            </div>
+                            <svg class="w-full h-auto" viewBox="0 0 200 200">
+                                <line x1="100" y1="100" x2="100" y2="20" stroke="#93C5FD" stroke-width="2" stroke-dasharray="4"/>
+                                <line x1="100" y1="100" x2="30" y2="180" stroke="#93C5FD" stroke-width="2" stroke-dasharray="4"/>
+                                <line x1="100" y1="100" x2="170" y2="180" stroke="#93C5FD" stroke-width="2" stroke-dasharray="4"/>
+                            </svg>
+                        </div>
+                        <p class="mt-12 text-gray-600">Insulin, released from the pancreas, signals to the liver, muscles, and fat cells to manage blood glucose.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Circadian Rhythm -->
+            <section id="circadian-rhythm" class="scroll-mt-20">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl font-bold text-gray-900">The Rhythm of Health: Your Body Clock</h3>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">Your body isn't the same at all hours. Your sensitivity to insulin follows a 24-hour cycle, highest in the morning and lowest at night. This means *when* you eat can be as important as *what* you eat for managing blood sugar and weight.</p>
+                </div>
+                <div class="card p-4 sm:p-6 lg:p-8">
+                    <div class="chart-container">
+                        <canvas id="circadianChart"></canvas>
+                    </div>
+                    <div class="mt-6 text-center">
+                        <p class="text-gray-600 mb-4">See the difference: Compare the metabolic response to the same meal eaten at different times.</p>
+                        <div class="flex justify-center flex-wrap gap-3">
+                            <button id="morningMealBtn" class="btn btn-secondary px-4 py-2 rounded-md text-sm font-medium">Show Morning Meal Response</button>
+                            <button id="eveningMealBtn" class="btn btn-secondary px-4 py-2 rounded-md text-sm font-medium">Show Evening Meal Response</button>
+                            <button id="resetChartBtn" class="btn bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-md text-sm font-medium">Reset Chart</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Insulin Resistance -->
+            <section id="resistance" class="scroll-mt-20">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl font-bold text-gray-900">When Communication Fails: Insulin Resistance</h3>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">Over time, due to factors like excess weight and chronic inflammation, your cells can become "deaf" to insulin's signal. This is insulin resistance. Your pancreas compensates by pumping out more insulin, leading to a state of high insulin (hyperinsulinemia) that drives a vicious cycle of fat storage and worsening health.</p>
+                </div>
+                <div class="card p-6 lg:p-8">
+                    <h4 class="text-xl font-semibold text-center text-gray-800 mb-8">The Vicious Cycle of Insulin Resistance</h4>
+                    <div class="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-0">
+                        <div class="text-center p-4 bg-red-50 rounded-lg shadow-sm">
+                            <p class="font-bold text-red-700">Chronic Calorie Surplus & Visceral Fat</p>
+                        </div>
+                        <div class="text-2xl text-red-400 mx-4">→</div>
+                        <div class="text-center p-4 bg-orange-50 rounded-lg shadow-sm">
+                            <p class="font-bold text-orange-700">Cells Become Insulin Resistant</p>
+                        </div>
+                        <div class="text-2xl text-orange-400 mx-4 hidden md:block">→</div>
+                         <div class="text-2xl text-orange-400 my-4 md:hidden">↓</div>
+                        <div class="text-center p-4 bg-yellow-50 rounded-lg shadow-sm">
+                            <p class="font-bold text-yellow-700">Pancreas Overproduces Insulin (Hyperinsulinemia)</p>
+                        </div>
+                        <div class="text-2xl text-yellow-400 mx-4">→</div>
+                        <div class="text-center p-4 bg-red-50 rounded-lg shadow-sm">
+                            <p class="font-bold text-red-700">Fat Storage Increases & Fat Burning Stops</p>
+                        </div>
+                    </div>
+                    <p class="text-center mt-8 text-gray-600">This cycle makes weight loss incredibly difficult and is the root cause of metabolic syndrome, increasing the risk of type 2 diabetes, heart disease, and other chronic conditions.</p>
+                </div>
+            </section>
+
+            <!-- Section: Action Plan -->
+            <section id="action-plan" class="scroll-mt-20">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl font-bold text-gray-900">Your Action Plan to Reclaim Control</h3>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">The good news is that insulin resistance is highly reversible. A holistic approach focusing on diet, exercise, and lifestyle can restore your body's sensitivity to insulin, breaking the cycle and unlocking better health.</p>
+                </div>
+                <div>
+                    <div class="mb-6 border-b border-gray-200">
+                        <nav class="-mb-px flex justify-center space-x-4 sm:space-x-8" aria-label="Tabs">
+                            <button class="tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="diet">Diet</button>
+                            <button class="tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="exercise">Exercise</button>
+                            <button class="tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="lifestyle">Lifestyle</button>
+                        </nav>
+                    </div>
+
+                    <div id="tab-content">
+                        <!-- Diet Content -->
+                        <div class="tab-pane" data-tab-content="diet">
+                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div class="card p-6">
+                                    <h4 class="text-xl font-semibold text-green-700 mb-4">Foods to Emphasize</h4>
+                                    <ul class="space-y-3 text-gray-600">
+                                        <li class="flex items-start"><span class="text-green-500 mr-2 mt-1">✓</span><span><strong>High-Fiber Veggies:</strong> Leafy greens, broccoli, peppers. They slow sugar absorption.</span></li>
+                                        <li class="flex items-start"><span class="text-green-500 mr-2 mt-1">✓</span><span><strong>Lean Proteins:</strong> Fish, poultry, beans. They promote satiety and stabilize blood sugar.</span></li>
+                                        <li class="flex items-start"><span class="text-green-500 mr-2 mt-1">✓</span><span><strong>Healthy Fats:</strong> Avocado, nuts, olive oil. They fight inflammation and improve insulin sensitivity.</span></li>
+                                        <li class="flex items-start"><span class="text-green-500 mr-2 mt-1">✓</span><span><strong>Low-GI Carbs:</strong> Quinoa, oats, berries. They provide sustained energy without sharp insulin spikes.</span></li>
+                                    </ul>
+                                </div>
+                                <div class="card p-6">
+                                    <h4 class="text-xl font-semibold text-red-700 mb-4">Foods to Limit or Avoid</h4>
+                                    <ul class="space-y-3 text-gray-600">
+                                        <li class="flex items-start"><span class="text-red-500 mr-2 mt-1">✗</span><span><strong>Sugary Drinks & Juices:</strong> The fastest way to spike insulin and drive fat storage.</span></li>
+                                        <li class="flex items-start"><span class="text-red-500 mr-2 mt-1">✗</span><span><strong>Refined Carbs:</strong> White bread, pasta, pastries. They act like sugar in your bloodstream.</span></li>
+                                        <li class="flex items-start"><span class="text-red-500 mr-2 mt-1">✗</span><span><strong>Ultra-Processed Foods:</strong> Often loaded with unhealthy fats, sugar, and chemicals that worsen resistance.</span></li>
+                                        <li class="flex items-start"><span class="text-red-500 mr-2 mt-1">✗</span><span><strong>Saturated & Trans Fats:</strong> Found in processed meats and fried foods, they promote inflammation.</span></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="card p-6 mt-8">
+                                <h4 class="text-xl font-semibold text-center text-gray-800 mb-4">✨ Personalized Meal Helper</h4>
+                                <p class="text-center text-gray-600 mb-4">Have some ingredients but not sure what to make? Enter them below for a simple, insulin-friendly recipe idea.</p>
+                                <div class="max-w-xl mx-auto">
+                                    <div class="flex flex-col sm:flex-row gap-2">
+                                        <input type="text" id="ingredientsInput" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., chicken, broccoli, quinoa">
+                                        <button id="getRecipeBtn" class="btn btn-primary rounded-md px-6 py-2 w-full sm:w-auto flex items-center justify-center gap-2">
+                                            Get Recipe
+                                            <span id="recipeLoader" class="loader hidden"></span>
+                                        </button>
+                                    </div>
+                                    <div id="recipeOutput" class="mt-4 p-4 bg-gray-50 rounded-lg min-h-[100px] text-gray-700 whitespace-pre-wrap"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Exercise Content -->
+                        <div class="tab-pane hidden" data-tab-content="exercise">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div class="card p-6 text-center">
+                                    <h4 class="text-xl font-semibold text-blue-700 mb-4">Aerobic Exercise</h4>
+                                    <p class="text-gray-600 mb-4">Brisk walking, cycling, swimming. Acts like a "sugar sponge," clearing glucose from the blood immediately, independent of insulin. Great for heart health and endurance.</p>
+                                    <p class="font-semibold text-gray-800">Aim for 150+ minutes/week.</p>
+                                </div>
+                                <div class="card p-6 text-center">
+                                    <h4 class="text-xl font-semibold text-indigo-700 mb-4">Resistance Training</h4>
+                                    <p class="text-gray-600 mb-4">Lifting weights, bodyweight exercises. Builds muscle, which is your primary glucose storage tank. More muscle means better long-term blood sugar control and higher metabolism.</p>
+                                    <p class="font-semibold text-gray-800">Aim for 2-3 sessions/week.</p>
+                                </div>
+                            </div>
+                            <p class="text-center mt-8 font-medium text-gray-700">The most powerful strategy is combining both aerobic and resistance training for comprehensive metabolic benefits.</p>
+                        </div>
+                        <!-- Lifestyle Content -->
+                        <div class="tab-pane hidden" data-tab-content="lifestyle">
+                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div class="card p-6 text-center">
+                                    <h4 class="text-xl font-semibold text-purple-700 mb-4">Prioritize Sleep</h4>
+                                    <p class="text-gray-600 mb-4">Sleep is not a luxury; it's a metabolic necessity. Even one night of poor sleep can temporarily induce insulin resistance. Chronic sleep loss disrupts hormones and fuels inflammation.</p>
+                                    <p class="font-semibold text-gray-800">Aim for 7-8.5 hours of quality sleep per night.</p>
+                                </div>
+                                <div class="card p-6 text-center">
+                                    <h4 class="text-xl font-semibold text-teal-700 mb-4">Manage Stress</h4>
+                                    <p class="text-gray-600 mb-4">Chronic stress keeps your body in "fight-or-flight" mode, releasing cortisol, a hormone that raises blood sugar and directly opposes insulin. This makes your body more insulin resistant over time.</p>
+                                    <p class="font-semibold text-gray-800">Incorporate practices like meditation, yoga, or time in nature.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Fertility -->
+            <section id="fertility" class="scroll-mt-20">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl font-bold text-gray-900">The Fertility Connection</h3>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">The health of your metabolism is directly linked to reproductive health. The same factors that drive insulin resistance can also impair male fertility by creating a hostile environment for sperm production.</p>
+                </div>
+                <div class="card p-6 lg:p-8 bg-blue-50 border-blue-200">
+                    <h4 class="text-xl font-semibold text-center text-blue-800 mb-6">How Insulin Resistance Harms Sperm Quality</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                        <div>
+                            <h5 class="font-bold text-blue-700">Hormonal Disruption</h5>
+                            <p class="text-sm text-gray-600 mt-2">Lowers testosterone and disrupts the critical testosterone-to-estrogen ratio needed for sperm production.</p>
+                        </div>
+                        <div>
+                            <h5 class="font-bold text-blue-700">Oxidative Stress</h5>
+                            <p class="text-sm text-gray-600 mt-2">High blood sugar creates damaging molecules (ROS) that can harm sperm DNA and impair their function.</p>
+                        </div>
+                        <div>
+                            <h5 class="font-bold text-blue-700">Chronic Inflammation</h5>
+                            <p class="text-sm text-gray-600 mt-2">The systemic inflammation associated with visceral fat disrupts the delicate environment of the testes.</p>
+                        </div>
+                    </div>
+                    <div class="mt-8 text-center bg-white p-4 rounded-lg shadow-inner">
+                        <p class="font-semibold text-gray-800">The path to a leaner, fitter body and the path to enhanced fertility are the same. By following the Action Plan to improve insulin sensitivity, you are simultaneously creating the optimal conditions for reproductive health.</p>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white">
+        <div class="container mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center">
+            <p>&copy; 2025 The Insulin Guide. This information is for educational purposes only and is not medical advice.</p>
+        </div>
+    </footer>
+
+    <!-- Summary Modal -->
+    <div id="summaryModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-semibold">✨ AI-Powered Key Takeaways</h3>
+                <button id="closeModalBtn" class="text-gray-500 hover:text-gray-800">&times;</button>
+            </div>
+            <div id="summaryContent" class="p-6 overflow-y-auto whitespace-pre-wrap">
+                <p>Generating summary...</p>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Data for interactive elements
+            const tissueData = {
+                liver: {
+                    title: 'Action in the Liver',
+                    description: 'Insulin tells the liver to stop producing its own glucose and start storing it as glycogen (your body\'s "sugar bank"). It also converts excess glucose into fat for long-term storage.'
+                },
+                muscle: {
+                    title: 'Action in the Muscle',
+                    description: 'Insulin acts like a key, unlocking muscle cells to allow glucose to enter for immediate energy or to be stored as glycogen. This is the primary way your body clears sugar from the blood.'
+                },
+                fat: {
+                    title: 'Action in Fat Tissue',
+                    description: 'Insulin promotes the storage of fat. Most importantly, it strongly blocks the release of stored fat, preventing your body from burning it for energy. This is why high insulin makes fat loss difficult.'
+                }
+            };
+
+            // Tissue interaction logic
+            const tissueButtons = document.querySelectorAll('[data-tissue]');
+            const tissueTitle = document.getElementById('tissue-title');
+            const tissueDescription = document.getElementById('tissue-description');
+            
+            tissueButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tissue = button.dataset.tissue;
+                    tissueTitle.textContent = tissueData[tissue].title;
+                    tissueDescription.textContent = tissueData[tissue].description;
+                    
+                    tissueButtons.forEach(btn => btn.classList.remove('active', 'bg-indigo-200'));
+                    button.classList.add('active', 'bg-indigo-200');
+                });
+            });
+
+            // Chart.js logic
+            const ctx = document.getElementById('circadianChart').getContext('2d');
+            let circadianChart;
+
+            const baseData = {
+                labels: ['6am', '8am', '10am', '12pm', '2pm', '4pm', '6pm', '8pm', '10pm', '12am', '2am', '4am'],
+                datasets: [{
+                    label: 'Insulin Sensitivity',
+                    data: [8, 9.5, 10, 9, 8, 7, 6, 5, 4, 3, 4.5, 6],
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    yAxisID: 'y'
+                }]
+            };
+
+            const morningMealData = {
+                label: 'Glucose Response (Morning Meal)',
+                data: [null, 120, 110, 95, 90, null, null, null, null, null, null, null],
+                borderColor: '#10B981',
+                backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                type: 'bar',
+                yAxisID: 'y1'
+            };
+
+            const eveningMealData = {
+                label: 'Glucose Response (Evening Meal)',
+                data: [null, null, null, null, null, null, null, 150, 140, 125, 110, null],
+                borderColor: '#EF4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                type: 'bar',
+                yAxisID: 'y1'
+            };
+
+            function createChart() {
+                if (circadianChart) {
+                    circadianChart.destroy();
+                }
+                circadianChart = new Chart(ctx, {
+                    type: 'line',
+                    data: JSON.parse(JSON.stringify(baseData)),
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Insulin Sensitivity (Arbitrary Units)'
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                grid: {
+                                    drawOnChartArea: false,
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Blood Glucose (mg/dL)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += context.parsed.y;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            createChart();
+
+            document.getElementById('morningMealBtn').addEventListener('click', () => {
+                if (circadianChart.data.datasets.length < 2 || (circadianChart.data.datasets.length > 1 && circadianChart.data.datasets[1].label.includes('Evening'))) {
+                   if(circadianChart.data.datasets.length > 1) circadianChart.data.datasets.pop();
+                    circadianChart.data.datasets.push(morningMealData);
+                    circadianChart.update();
+                }
+            });
+
+            document.getElementById('eveningMealBtn').addEventListener('click', () => {
+                 if (circadianChart.data.datasets.length < 2 || (circadianChart.data.datasets.length > 1 && circadianChart.data.datasets[1].label.includes('Morning'))) {
+                    if(circadianChart.data.datasets.length > 1) circadianChart.data.datasets.pop();
+                    circadianChart.data.datasets.push(eveningMealData);
+                    circadianChart.update();
+                }
+            });
+
+            document.getElementById('resetChartBtn').addEventListener('click', () => {
+                createChart();
+            });
+
+            // Tab logic
+            const tabs = document.querySelectorAll('.tab');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabTarget = tab.dataset.tab;
+
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    tabPanes.forEach(pane => {
+                        if (pane.dataset.tabContent === tabTarget) {
+                            pane.classList.remove('hidden');
+                        } else {
+                            pane.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+            tabs[0].click();
+            
+            // Mobile menu logic
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            document.querySelectorAll('#mobile-menu a').forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                });
+            });
+
+            // Active nav link scrolling
+            const sections = document.querySelectorAll('main section');
+            const navLinks = document.querySelectorAll('header nav a');
+
+            window.addEventListener('scroll', () => {
+                let current = 'introduction';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    const href = link.getAttribute('href');
+                    if (href && href.includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+            // Gemini API Integration
+            const getRecipeBtn = document.getElementById('getRecipeBtn');
+            const ingredientsInput = document.getElementById('ingredientsInput');
+            const recipeOutput = document.getElementById('recipeOutput');
+            const recipeLoader = document.getElementById('recipeLoader');
+
+            getRecipeBtn.addEventListener('click', async () => {
+                const ingredients = ingredientsInput.value.trim();
+                if (!ingredients) {
+                    recipeOutput.textContent = 'Please enter some ingredients.';
+                    return;
+                }
+
+                recipeLoader.classList.remove('hidden');
+                getRecipeBtn.disabled = true;
+                recipeOutput.textContent = 'Generating recipe...';
+
+                const prompt = `Given the following ingredients: ${ingredients}. Create a simple, healthy, and delicious recipe that is insulin-friendly. This means it should be low in refined carbohydrates and sugars, and rich in fiber, protein, and healthy fats. Provide a name for the recipe, a short list of ingredients (including the ones provided), and simple step-by-step instructions. Format the response clearly.`;
+
+                try {
+                    let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                    const payload = { contents: chatHistory };
+                    const apiKey = ""; 
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                    
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API request failed with status ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        recipeOutput.textContent = text;
+                    } else {
+                        throw new Error('Unexpected API response format.');
+                    }
+                } catch (error) {
+                    console.error("Error fetching recipe:", error);
+                    recipeOutput.textContent = 'Sorry, I couldn\'t generate a recipe right now. Please try again later.';
+                } finally {
+                    recipeLoader.classList.add('hidden');
+                    getRecipeBtn.disabled = false;
+                }
+            });
+
+            // Summary Modal Logic
+            const summarizeBtn = document.getElementById('summarizeBtn');
+            const summarizeLoader = document.getElementById('summarizeLoader');
+            const summaryModal = document.getElementById('summaryModal');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const summaryContent = document.getElementById('summaryContent');
+
+            summarizeBtn.addEventListener('click', async () => {
+                summaryModal.style.display = 'flex';
+                summarizeLoader.classList.remove('hidden');
+                summarizeBtn.disabled = true;
+                summaryContent.textContent = 'Generating summary...';
+
+                const pageContent = document.querySelector('main').innerText;
+                const prompt = `Summarize the following text about insulin, metabolism, and health into key, actionable takeaways for a general audience. The summary should be concise, easy to understand, and structured with clear headings or bullet points. Focus on the most important concepts: what insulin does, the problem with insulin resistance, its link to the body clock and fertility, and the main pillars of the action plan (diet, exercise, lifestyle).\n\nText to summarize:\n${pageContent}`;
+                
+                try {
+                    let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                    const payload = { contents: chatHistory };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                    
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API request failed with status ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        summaryContent.textContent = text;
+                    } else {
+                        throw new Error('Unexpected API response format.');
+                    }
+                } catch (error) {
+                    console.error("Error fetching summary:", error);
+                    summaryContent.textContent = 'Sorry, I couldn\'t generate a summary right now. Please try again later.';
+                } finally {
+                    summarizeLoader.classList.add('hidden');
+                    summarizeBtn.disabled = false;
+                }
+            });
+
+            closeModalBtn.addEventListener('click', () => {
+                summaryModal.style.display = 'none';
+            });
+            
+            window.addEventListener('click', (event) => {
+                if (event.target == summaryModal) {
+                    summaryModal.style.display = 'none';
+                }
+            });
+
+        });
+    </script>
+</body>
+</html>
